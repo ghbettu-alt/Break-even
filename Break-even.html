@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calculadora de Preço de Venda</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-body: #f1f5f9;
+      --bg-card: #ffffff;
+      --bg-side: #f8fafc;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --input-bg: #ffffff;
+      --accent: #2563eb;
+      --header-bg: #0f172a;
+      --header-text: #ffffff;
+      --danger: #ef4444;
+      --success: #10b981;
+    }
+
+    [data-theme="dark"] {
+      --bg-body: #020617;
+      --bg-card: #0f172a;
+      --bg-side: #1e293b;
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --border: #334155;
+      --input-bg: #1e293b;
+      --accent: #3b82f6;
+      --header-bg: #1e293b;
+    }
+
+    * { box-sizing: border-box; transition: background-color 0.2s, border-color 0.2s; }
+
+    body {
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      font-family: 'Inter', sans-serif;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+      overflow-x: hidden;
+    }
+
+    .app-wrapper {
+      width: 100%;
+      max-width: 1050px;
+      background: var(--bg-card);
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .top-bar {
+      background: var(--header-bg);
+      color: var(--header-text);
+      padding: 18px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .top-bar h1 { margin: 0; font-size: 13px; letter-spacing: 1.5px; font-weight: 700; text-transform: uppercase; }
+    
+    .theme-toggle {
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: inherit;
+      padding: 6px 14px;
+      border-radius: 4px;
+      font-size: 10px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .main-content { display: flex; flex-wrap: wrap; }
+    .input-section { flex: 1.2; padding: 40px; min-width: 350px; }
+    .result-section { flex: 0.8; background: var(--bg-side); padding: 40px; border-left: 1px solid var(--border); min-width: 300px; }
+
+    .input-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .full { grid-column: span 2; }
+    .field { display: flex; flex-direction: column; gap: 6px; }
+
+    label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
+
+    input {
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 12px;
+      border-radius: 6px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+      outline: none;
+    }
+
+    input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1); }
+    input::placeholder { color: var(--text-muted); opacity: 0.4; }
+
+    .main-result {
+      background: var(--accent);
+      color: #fff;
+      padding: 24px;
+      border-radius: 8px;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+
+    .main-result label { color: rgba(255,255,255,0.8); }
+    .main-result .value { display: block; font-size: 32px; font-weight: 700; margin-top: 5px; font-family: 'JetBrains Mono'; }
+
+    .data-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .data-row span:first-child { font-size: 10px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; padding-right: 15px; }
+    .data-row span:last-child { font-family: 'JetBrains Mono'; font-weight: 600; font-size: 15px; text-align: right; color: var(--text-main); }
+
+    .btn-group { margin-top: 32px; display: flex; flex-direction: column; gap: 10px; }
+    .btn { padding: 16px; border-radius: 6px; border: none; font-weight: 700; font-size: 12px; cursor: pointer; text-transform: uppercase; }
+    .btn-calc { background: var(--accent); color: white; }
+    .btn-clear { background: transparent; color: var(--text-muted); border: 1px solid var(--border); }
+    .btn-sim { background: var(--success); color: white; margin-top: 5px; }
+
+    .highlight-input { border-left: 4px solid var(--accent); background: rgba(37, 99, 235, 0.03); }
+
+    .side-panel {
+      position: fixed; right: -400px; top: 0; width: 380px; height: 100%;
+      background: var(--bg-card); border-left: 1px solid var(--border);
+      box-shadow: -10px 0 30px rgba(0,0,0,0.2); transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 1000; padding: 30px; display: flex; flex-direction: column;
+      overflow-y: auto;
+    }
+    .side-panel.open { right: 0; }
+    .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); display: none; z-index: 999; }
+    .overlay.open { display: block; }
+
+    .comp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+    .comp-card { padding: 12px; border-radius: 6px; background: var(--bg-side); border: 1px solid var(--border); }
+    .comp-label { font-size: 9px; color: var(--text-muted); display: block; margin-bottom: 5px; text-transform: uppercase; font-weight: 700; }
+    .comp-val { font-family: 'JetBrains Mono'; font-weight: 700; font-size: 14px; }
+
+    footer {
+        margin-top: 24px;
+        font-size: 11px;
+        color: var(--text-muted);
+        text-align: center;
+        letter-spacing: 0.5px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="overlay" id="overlay" onclick="toggleSim(false)"></div>
+
+<div class="side-panel" id="sidePanel">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;">
+    <h2 style="font-size:16px; margin:0; font-weight: 700; color: var(--accent);">SIMULAÇÃO DE DESCONTO</h2>
+    <button onclick="toggleSim(false)" style="background:none; border:none; cursor:pointer; font-size:24px; color: var(--text-muted);">&times;</button>
+  </div>
+  
+  <div class="field" style="margin-bottom:12px;">
+    <label>Venda Média Atual (Unidades)</label>
+    <input type="text" id="sVolAtual" placeholder="Ex: 100">
+  </div>
+  
+  <div class="field" style="margin-bottom:20px;">
+    <label>Expectativa de Crescimento %</label>
+    <input type="text" id="sCrescimento" placeholder="Ex: 10">
+  </div>
+
+  <div style="background:rgba(37, 99, 235, 0.05); padding:20px; border-radius:8px; border:1px solid var(--accent); margin-bottom: 25px;">
+    <label style="color:var(--accent); margin-bottom:15px; display:block;">Definir Novo Cenário</label>
+    <div class="field" style="margin-bottom:12px;"><label>Novo Preço Venda (R$)</label><input type="text" id="sNovoPreco" placeholder="0,00"></div>
+    <div class="field" style="margin-bottom:12px;"><label>Ou Nova Margem % (Markup)</label><input type="text" id="sNovaMargem" placeholder="Ex: 15"></div>
+    <div class="field"><label>Ou Desconto %</label><input type="text" id="sDesconto" placeholder="Ex: 5"></div>
+    <button class="btn btn-calc" style="width: 100%; margin-top: 15px; padding: 12px;" onclick="calcularSimulacao()">Aplicar Análise</button>
+  </div>
+
+  <div id="painelComparativo" style="display:none;">
+    <label style="color: var(--text-main);">Comparativo de Impacto</label>
+    <div class="comp-grid">
+      <div class="comp-card"><span class="comp-label">Margem Real Original</span><span class="comp-val" id="cMargemO">--</span></div>
+      <div class="comp-card" style="border-color:var(--accent)"><span class="comp-label">Nova Margem Real</span><span class="comp-val" id="cMargemN" style="color:var(--accent)">--</span></div>
+      <div class="comp-card"><span class="comp-label">Lucro Unit. Atual</span><span class="comp-val" id="cLucroO">--</span></div>
+      <div class="comp-card" style="border-color:var(--accent)"><span class="comp-label">Novo Lucro Unit.</span><span class="comp-val" id="cLucroN" style="color:var(--accent)">--</span></div>
+    </div>
+    
+    <div id="blocoEsforço" style="margin-top:20px; background:rgba(239, 68, 68, 0.1); padding:18px; border-radius:8px; border: 1px solid rgba(239, 68, 68, 0.2);">
+      <label style="color:var(--danger); display: block; margin-bottom: 10px;">Esforço de Volume (Ponto de Equilíbrio)</label>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
+        <span style="font-size:11px; font-weight:700; color: var(--text-main);">Nova Meta de Venda:</span>
+        <span id="cMetaVol" style="font-family:'JetBrains Mono'; font-weight:700; color:var(--danger); font-size: 16px;">--</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-size:11px; font-weight:700; color: var(--text-main);">Lucro Total Projetado:</span>
+        <span id="cLucroTotal" style="font-family:'JetBrains Mono'; font-weight:700; color:var(--danger); font-size: 16px;">--</span>
+      </div>
+    </div>
+
+    <div id="blocoCrescimento" style="display:none; margin-top:10px; background:rgba(16, 185, 129, 0.1); padding:18px; border-radius:8px; border: 1px solid rgba(16, 185, 129, 0.2);">
+      <label style="color:var(--success); display: block; margin-bottom: 10px;">Projeção com Crescimento Real</label>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
+        <span style="font-size:11px; font-weight:700; color: var(--text-main);">Novo Volume Total:</span>
+        <span id="cVolComCresc" style="font-family:'JetBrains Mono'; font-weight:700; color:var(--success); font-size: 16px;">--</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-size:11px; font-weight:700; color: var(--text-main);">Lucro Estimado Final:</span>
+        <span id="cLucroComCresc" style="font-family:'JetBrains Mono'; font-weight:700; color:var(--success); font-size: 16px;">--</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="app-wrapper">
+  <div class="top-bar">
+    <h1>CALCULADORA DE PREÇO DE VENDA</h1>
+    <button class="theme-toggle" id="themeBtn" onclick="toggleTheme()">DARK / LIGHT</button>
+  </div>
+
+  <div class="main-content">
+    <div class="input-section">
+      <div class="input-grid">
+        <div class="field full">
+          <label>Valor Bruto Fornecedor (Lista)</label>
+          <input type="text" id="vBruto" class="nav" placeholder="0,00">
+        </div>
+        <div class="field full">
+          <label>Desconto da Política Comercial(%)</label>
+          <input type="text" id="desc" class="nav" placeholder="Ex: 10+5">
+        </div>
+        <div class="field">
+          <label>Líquido NF (R$)</label>
+          <input type="text" id="vLiq" class="nav" placeholder="0,00">
+        </div>
+        <div class="field">
+          <label>IPI %</label>
+          <input type="text" id="ipi" class="nav" placeholder="0">
+        </div>
+        <div class="field">
+          <label>ICMS Entrada %</label>
+          <input type="text" id="icms" class="nav" placeholder="12">
+        </div>
+        <div class="field">
+          <label>Margem Alvo % (Markup)</label>
+          <input type="text" id="margem" class="nav" placeholder="0">
+        </div>
+        <div class="field">
+          <label>Custo Finan. %</label>
+          <input type="text" id="fin" class="nav" placeholder="0">
+        </div>
+        <div class="field">
+          <label>Frete Operacional %</label>
+          <input type="text" id="frete" class="nav" placeholder="0">
+        </div>
+        <div class="field full">
+          <hr style="border: 0; border-top: 1px solid var(--border); margin: 10px 0;">
+          <label style="color: var(--accent)">Cliente 50%+10% ICMS 12% (Entrada p/ Reverso)</label>
+          <input type="text" id="vSugeridoInput" class="nav highlight-input" placeholder="Opcional para cálculo reverso">
+        </div>
+      </div>
+    </div>
+
+    <div class="result-section">
+      <div class="main-result">
+        <label>Margem Real Efetiva</label>
+        <span id="rMargemReal" class="value">--</span>
+      </div>
+
+      <div class="data-row">
+        <span>Custo de Aquisição</span>
+        <span id="rCusto">--</span>
+      </div>
+      <div class="data-row">
+        <span>Venda Bruta SC (Saída)</span>
+        <span id="rSaida">--</span>
+      </div>
+      <div class="data-row">
+        <span>Cliente 50%+10% ICMS 12%</span>
+        <span id="r12">--</span>
+      </div>
+      <div class="data-row">
+        <span>Cliente 50%+10% ICMS 17%</span>
+        <span id="r17">--</span>
+      </div>
+
+      <div class="btn-group">
+        <button class="btn btn-calc" onclick="executar()">Calcular</button>
+        <button class="btn btn-clear" onclick="limpar()">Limpar Tudo</button>
+        <button class="btn btn-sim" onclick="toggleSim(true)">📊 Simular desconto</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+    HB Solutions © 2026 
+</footer>
+
+<script>
+  let dadosBase = {};
+
+  const currentTheme = localStorage.getItem('theme') || 'light';
+  document.documentElement.setAttribute('data-theme', currentTheme);
+
+  function toggleTheme() {
+    let theme = document.documentElement.getAttribute('data-theme');
+    let newTheme = theme === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+  }
+
+  function toggleSim(open) {
+    if (open && !dadosBase.vSugCalculado) {
+        return alert("Execute o cálculo principal primeiro!");
+    }
+    document.getElementById('sidePanel').classList.toggle('open', open);
+    document.getElementById('overlay').classList.toggle('open', open);
+  }
+
+  const inputs = Array.from(document.querySelectorAll('.nav'));
+  inputs.forEach((input, index) => {
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const nextInput = inputs[index + 1];
+        if (nextInput) nextInput.focus();
+        else executar();
+      }
+    });
+  });
+
+  function n(id) {
+    let el = document.getElementById(id);
+    if(!el) return null;
+    let val = el.value.replace(/\./g, '').replace(',', '.');
+    return val === "" ? null : parseFloat(val);
+  }
+
+  function setV(id, val) {
+    if (val === null || isNaN(val)) return;
+    document.getElementById(id).value = val.toFixed(2).replace('.', ',');
+  }
+
+  function f(v) {
+    return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  }
+
+  function executar() {
+    let vBruto = n('vBruto');
+    let vLiq = n('vLiq');
+    let ipi = n('ipi'); 
+    let icms = n('icms');
+    let margem = n('margem');
+    let vSugInput = n('vSugeridoInput');
+    let fin = (n('fin') ?? 0) / 100;
+    let frete = (n('frete') ?? 0) / 100;
+
+    if (vBruto !== null && vLiq === null) {
+      vLiq = vBruto;
+      let dStr = document.getElementById('desc').value;
+      if (dStr) {
+        dStr.split('+').forEach(d => {
+          vLiq *= (1 - (parseFloat(d.replace(',','.')) / 100));
+        });
+      }
+      setV('vLiq', vLiq);
+    }
+
+    const impostoSaidaBase = 0.88; 
+    let vSugCalculado = null;
+
+    if (vSugInput !== null) {
+        vSugCalculado = vSugInput;
+        let valorBasePosTaxas = vSugCalculado / ((1 + fin) * (1 + frete));
+        let custoEfetivoNecessario = (valorBasePosTaxas * impostoSaidaBase) / (1 + (margem ?? 0)/100);
+
+        if (vLiq !== null && ipi !== null && icms === null) {
+            icms = ((vLiq * (1 + ipi/100) - custoEfetivoNecessario) / vLiq) * 100;
+            setV('icms', icms);
+        } else if (vLiq !== null && icms !== null && ipi === null) {
+            ipi = ((custoEfetivoNecessario + vLiq * (icms/100)) / vLiq - 1) * 100;
+            setV('ipi', ipi);
+        } else if (vLiq === null && icms !== null && ipi !== null) {
+            vLiq = custoEfetivoNecessario / ((1 + ipi/100) - (icms/100));
+            setV('vLiq', vLiq);
+        } else if (vLiq !== null && icms !== null && ipi !== null && margem === null) {
+            let custoEfAtual = (vLiq * (1 + ipi/100)) - (vLiq * icms/100);
+            margem = (( (valorBasePosTaxas * impostoSaidaBase) / custoEfAtual ) - 1) * 100;
+            setV('margem', margem);
+        }
+    } else if (vLiq !== null && margem !== null) {
+        let tempIpi = ipi ?? 0;
+        let tempIcms = icms ?? 12;
+        let custoEfetivoEntrada = (vLiq * (1 + tempIpi/100)) - (vLiq * tempIcms/100);
+        let precoBase = (custoEfetivoEntrada * (1 + margem/100)) / impostoSaidaBase;
+        vSugCalculado = precoBase * (1 + fin) * (1 + frete);
+    }
+
+    if (vSugCalculado !== null && vLiq !== null) {
+        let finalIpi = ipi ?? 0;
+        let finalIcms = icms ?? 12;
+        let custoDesembolso = vLiq * (1 + finalIpi/100);
+        let margemReal = ((vSugCalculado - custoDesembolso) / vSugCalculado) * 100;
+        let vendaBrutaSC = vSugCalculado * 2.222222;
+
+        document.getElementById('rMargemReal').innerText = margemReal.toFixed(2).replace('.', ',') + "%";
+        document.getElementById('rCusto').innerText = f(custoDesembolso);
+        document.getElementById('rSaida').innerText = f(vendaBrutaSC);
+        document.getElementById('r12').innerText = f(vSugCalculado);
+        document.getElementById('r17').innerText = f(vSugCalculado * 1.0602); 
+
+        dadosBase = {
+            vSugCalculado, 
+            custoDesembolso, 
+            custoEfetivo: (vLiq * (1 + finalIpi/100)) - (vLiq * finalIcms/100),
+            fin,
+            frete,
+            margemReal
+        };
+
+        if (document.getElementById('ipi').value === "") setV('ipi', finalIpi);
+        if (document.getElementById('icms').value === "") setV('icms', finalIcms);
+    }
+  }
+
+  function calcularSimulacao() {
+    if (!dadosBase.vSugCalculado) return alert("Execute o cálculo principal primeiro!");
+    
+    let volAtual = n('sVolAtual');
+    if (volAtual === null || volAtual <= 0) {
+        return alert("Por favor, preencha o campo 'Venda Média Atual (Unidades)' para realizar a análise.");
+    }
+
+    let sPreco = n('sNovoPreco');
+    let sMargem = n('sNovaMargem');
+    let sDesc = n('sDesconto');
+    let crescPerc = n('sCrescimento') || 0;
+    
+    let precoNovo = 0;
+    const impostoSaidaBase = 0.88;
+
+    if (sPreco !== null) {
+        precoNovo = sPreco;
+        let novaMargemCalc = ((precoNovo / ((1 + dadosBase.fin) * (1 + dadosBase.frete)) * impostoSaidaBase / dadosBase.custoEfetivo) - 1) * 100;
+        let novoDescontoCalc = (1 - (precoNovo / dadosBase.vSugCalculado)) * 100;
+        setV('sNovaMargem', novaMargemCalc);
+        setV('sDesconto', novoDescontoCalc);
+    } 
+    else if (sMargem !== null) {
+        precoNovo = (dadosBase.custoEfetivo * (1 + sMargem/100)) / impostoSaidaBase * (1 + dadosBase.fin) * (1 + dadosBase.frete);
+        let novoDescontoCalc = (1 - (precoNovo / dadosBase.vSugCalculado)) * 100;
+        setV('sNovoPreco', precoNovo);
+        setV('sDesconto', novoDescontoCalc);
+    } 
+    else if (sDesc !== null) {
+        precoNovo = dadosBase.vSugCalculado * (1 - (sDesc/100));
+        let novaMargemCalc = ((precoNovo / ((1 + dadosBase.fin) * (1 + dadosBase.frete)) * impostoSaidaBase / dadosBase.custoEfetivo) - 1) * 100;
+        setV('sNovoPreco', precoNovo);
+        setV('sNovaMargem', novaMargemCalc);
+    }
+
+    if (precoNovo > 0) {
+      document.getElementById('painelComparativo').style.display = 'block';
+      let lucroO = dadosBase.vSugCalculado - dadosBase.custoDesembolso;
+      let lucroN = precoNovo - dadosBase.custoDesembolso;
+      let mRealN = ((lucroN / precoNovo) * 100).toFixed(2);
+
+      document.getElementById('cMargemO').innerText = dadosBase.margemReal.toFixed(2).replace('.', ',') + "%";
+      document.getElementById('cMargemN').innerText = mRealN.replace('.', ',') + "%";
+      document.getElementById('cLucroO').innerText = f(lucroO);
+      document.getElementById('cLucroN').innerText = f(lucroN);
+
+      if (lucroN > 0) {
+        let meta = Math.ceil((lucroO * volAtual) / lucroN);
+        let aumentoMeta = ((meta / volAtual) - 1) * 100;
+        let lucroTotal = meta * lucroN;
+
+        document.getElementById('cMetaVol').innerText = meta + " un (+" + aumentoMeta.toFixed(1) + "%)";
+        document.getElementById('cLucroTotal').innerText = f(lucroTotal);
+
+        if (crescPerc > 0) {
+            document.getElementById('blocoCrescimento').style.display = 'block';
+            
+            // Lógica Corrigida: 
+            // 1. O volume final é a Meta (Equilíbrio) + o crescimento desejado sobre o Vol Atual.
+            let volCrescimentoAdicional = volAtual * (crescPerc / 100);
+            let volFinal = Math.ceil(meta + volCrescimentoAdicional);
+            
+            // 2. O percentual de crescimento real é: ((Volume Final / Volume Inicial) - 1) * 100
+            let percCrescimentoReal = ((volFinal / volAtual) - 1) * 100;
+            
+            let lucroComCresc = volFinal * lucroN;
+            
+            document.getElementById('cVolComCresc').innerText = volFinal + " un (+" + percCrescimentoReal.toFixed(1) + "%)";
+            document.getElementById('cLucroComCresc').innerText = f(lucroComCresc);
+        } else {
+            document.getElementById('blocoCrescimento').style.display = 'none';
+        }
+      } else {
+        document.getElementById('cMetaVol').innerText = "INVIÁVEL";
+        document.getElementById('cLucroTotal').innerText = "--";
+        document.getElementById('blocoCrescimento').style.display = 'none';
+      }
+    }
+  }
+
+  function limpar() {
+    document.querySelectorAll('input').forEach(i => i.value = "");
+    document.getElementById('rMargemReal').innerText = "--";
+    document.getElementById('rCusto').innerText = "--";
+    document.getElementById('rSaida').innerText = "--";
+    document.getElementById('r12').innerText = "--";
+    document.getElementById('r17').innerText = "--";
+    document.getElementById('painelComparativo').style.display = 'none';
+    document.getElementById('blocoCrescimento').style.display = 'none';
+    dadosBase = {};
+    inputs[0].focus();
+  }
+</script>
+
+</body>
+</html>
